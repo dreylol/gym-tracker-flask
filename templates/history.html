@@ -39,6 +39,8 @@
         <th>Exercise</th>
         <th>Weight (lbs)</th>
         <th>Reps</th>
+        <th>Sets</th>
+        <th>Notes</th>
       </tr>
     </thead>
     <tbody>
@@ -49,6 +51,8 @@
         <td>{{ row[2] }}</td>
         <td>{{ row[3] }}</td>
         <td>{{ row[4] }}</td>
+        <td>{{ row[5] if row|length > 5 else '' }}</td>
+        <td>{{ row[6] if row|length > 6 else '' }}</td>
       </tr>
       {% endfor %}
     </tbody>
