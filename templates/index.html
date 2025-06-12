@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Gym Tracker</title>
+  <style>
+    body {
+      background-color: #121212;
+      color: white;
+      font-family: Arial, sans-serif;
+      padding: 30px;
+    }
+    input, select, button {
+      background: #222;
+      color: white;
+      border: none;
+      padding: 10px;
+      margin: 5px 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    a {
+      color: #00bfff;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Log Workout</h1>
+  <form action="/log" method="post">
+    <label for="day">Day:</label>
+    <select name="day" id="day" required>
+      {% for day in workout_days %}
+        <option value="{{ day }}">{{ day }}</option>
+      {% endfor %}
+    </select>
+
+    <label for="exercise">Exercise:</label>
+    <select name="exercise" id="exercise" required>
+      <!-- Options will be filled by JS -->
+    </select>
+
+    <label for="weight">Weight (lbs):</label>
+    <input type="number" step="any" name="weight" id="weight" min="0" required />
+
+    <label for="reps">Reps:</label>
+    <input type="number" name="reps" id="reps" min="1" required />
+
+    <button type="submit">Log Workout</button>
+  </form>
+
+  <h3><a href="/history">View History</a></h3>
+
+  <hr />
+
+  <h2>1RM Calculator</h2>
+  <p>Estimate your 1-rep max (Epley formula)</p>
+  <button id="calculateBtn" type="button">Calculate 1RM</button>
+  <p id="result"></p>
+
+  <!-- Workout data as JSON -->
+  <script id="exercise-data" type="application/json">
+    {{ workout_days | tojson }}
+  </script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const exerciseData = JSON.parse(document.getElementById('exercise-data').textContent);
+      const daySelect = document.getElementById('day');
+      const exerciseSelect = document.getElementById('exercise');
+      const weightInput = document.getElementById('weight');
+      const repsInput = document.getElementById('reps');
+      const result = document.getElementById('result');
+      const calculateBtn = document.getElementById('calculateBtn');
+
+      // Populate exercises based on selected day
+      function updateExercises() {
+        const day = daySelect.value;
+        const exercises = exerciseData[day] || [];
+        exerciseSelect.innerHTML = '';
+        exercises.forEach(ex => {
+          const option = document.createElement('option');
+          option.value = ex;
+          option.textContent = ex;
+          exerciseSelect.appendChild(option);
+        });
+      }
+
+      // Calculate estimated 1RM using Epley formula
+      function calculate1RM() {
+        const weight = parseFloat(weightInput.value);
+        const reps = parseInt(repsInput.value);
+        if (!isNaN(weight) && !isNaN(reps) && reps > 0) {
+          const oneRM = Math.round(weight * (1 + reps / 30));
+          result.textContent = `Estimated 1RM: ${oneRM} lbs`;
+        } else {
+          result.textContent = "Please enter valid weight and reps.";
+        }
+      }
+
+      // Initial fill
+      updateExercises();
+
+      // Event listeners
+      daySelect.addEventListener('change', updateExercises);
+      calculateBtn.addEventListener('click', calculate1RM);
+    });
+  </script>
+</body>
+</html>
