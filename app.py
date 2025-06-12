@@ -24,21 +24,24 @@ def log():
     exercise = request.form.get("exercise")
     weight = request.form.get("weight")
     reps = request.form.get("reps")
+    sets = request.form.get("sets")
+    notes = request.form.get("notes")
     date = datetime.now().strftime("%Y-%m-%d")
 
-    # Basic validation to ensure no empty values
-    if day and exercise and weight and reps:
+    # Basic validation to ensure no empty required values
+    if day and exercise and weight and reps and sets:
         try:
             weight_float = float(weight)
             reps_int = int(reps)
+            sets_int = int(sets)
         except ValueError:
             # Invalid input, redirect back without logging
             return redirect(url_for('index'))
 
-        # Append to CSV file
+        # Append to CSV file with new fields sets and notes
         with open("workout_log.csv", "a", newline="") as file:
             writer = csv.writer(file)
-            writer.writerow([date, day, exercise, weight_float, reps_int])
+            writer.writerow([date, day, exercise, weight_float, reps_int, sets_int, notes])
 
     return redirect(url_for('index'))
 
