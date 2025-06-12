@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Gym Tracker</title>
+  <title>Workout Log</title>
   <style>
     body {
       background-color: #121212;
@@ -10,101 +10,171 @@
       font-family: Arial, sans-serif;
       padding: 30px;
     }
-    input, select, button {
-      background: #222;
-      color: white;
-      border: none;
-      padding: 10px;
-      margin: 5px 0;
-      width: 100%;
-      box-sizing: border-box;
+    label, select, input, textarea, button {
+      display: block;
+      margin-bottom: 12px;
+      font-size: 1.1em;
+      width: 300px;
+      max-width: 100%;
     }
-    a {
-      color: #00bfff;
-      text-decoration: none;
+    input, select, textarea {
+      padding: 8px;
+      border-radius: 6px;
+      border: none;
+      background-color: #222;
+      color: white;
+    }
+    button {
+      width: 150px;
+      background-color: #00bfff;
+      border: none;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 6px;
+      padding: 10px;
+    }
+    button:hover {
+      background-color: #0099cc;
+    }
+    hr {
+      margin: 40px 0 20px 0;
+      border-color: #333;
     }
   </style>
 </head>
 <body>
-  <h1>Log Workout</h1>
-  <form action="/log" method="post">
-    <label for="day">Day:</label>
+  <h1>Workout Log</h1>
+
+  <form action="/submit" method="post" id="logForm">
+    <label for="day">Day of Week</label>
     <select name="day" id="day" required>
-      {% for day in workout_days %}
-        <option value="{{ day }}">{{ day }}</option>
-      {% endfor %}
+      <option value="Monday">Monday</option>
+      <option value="Tuesday">Tuesday</option>
+      <option value="Wednesday">Wednesday</option>
+      <option value="Thursday">Thursday</option>
+      <option value="Friday">Friday</option>
+      <option value="Saturday">Saturday</option>
+      <option value="Sunday">Sunday</option>
     </select>
 
-    <label for="exercise">Exercise:</label>
+    <label for="exercise">Exercise</label>
     <select name="exercise" id="exercise" required>
-      <!-- Options will be filled by JS -->
+      <option value="Squat">Squat</option>
+      <option value="Bench Press">Bench Press</option>
+      <option value="Deadlift">Deadlift</option>
+      <option value="Pull-Up">Pull-Up</option>
+      <option value="Barbell Row">Barbell Row</option>
+      <option value="Overhead Press">Overhead Press</option>
+      <option value="Front Squat">Front Squat</option>
+      <option value="Leg Curl">Leg Curl</option>
+      <option value="Leg Press">Leg Press</option>
+      <option value="Bulgarian Split Squat">Bulgarian Split Squat</option>
+      <option value="Calf Raises">Calf Raises</option>
+      <!-- Add more exercises as needed -->
     </select>
 
-    <label for="weight">Weight (lbs):</label>
-    <input type="number" step="any" name="weight" id="weight" min="0" required />
+    <label for="weight">Weight (lbs)</label>
+    <input type="number" name="weight" id="weight" min="0" step="0.1" required />
 
-    <label for="reps">Reps:</label>
+    <label for="reps">Reps</label>
     <input type="number" name="reps" id="reps" min="1" required />
 
-    <button type="submit">Log Workout</button>
+    <label for="sets">Sets</label>
+    <input type="number" name="sets" id="sets" min="1" required />
+
+    <label for="notes">Notes (optional)</label>
+    <textarea name="notes" id="notes" rows="3" placeholder="Any additional notes..."></textarea>
+
+    <button type="submit">Add Workout</button>
   </form>
 
-  <h3><a href="/history">View History</a></h3>
-
   <hr />
+  <h2>Save Workout Preset</h2>
+  <input type="text" id="presetName" placeholder="Preset name" />
+  <button type="button" id="savePresetBtn">Save Current Workout</button>
 
-  <h2>1RM Calculator</h2>
-  <p>Estimate your 1-rep max (Epley formula)</p>
-  <button id="calculateBtn" type="button">Calculate 1RM</button>
-  <p id="result"></p>
-
-  <!-- Workout data as JSON -->
-  <script id="exercise-data" type="application/json">
-    {{ workout_days | tojson }}
-  </script>
+  <h3>Load Preset</h3>
+  <select id="presetList">
+    <option value="">-- Select Preset --</option>
+  </select>
+  <button type="button" id="loadPresetBtn">Load</button>
+  <button type="button" id="deletePresetBtn">Delete</button>
 
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const exerciseData = JSON.parse(document.getElementById('exercise-data').textContent);
-      const daySelect = document.getElementById('day');
-      const exerciseSelect = document.getElementById('exercise');
-      const weightInput = document.getElementById('weight');
-      const repsInput = document.getElementById('reps');
-      const result = document.getElementById('result');
-      const calculateBtn = document.getElementById('calculateBtn');
+    // Preset Save/Load/Delete using localStorage
 
-      // Populate exercises based on selected day
-      function updateExercises() {
-        const day = daySelect.value;
-        const exercises = exerciseData[day] || [];
-        exerciseSelect.innerHTML = '';
-        exercises.forEach(ex => {
+    const saveBtn = document.getElementById('savePresetBtn');
+    const loadBtn = document.getElementById('loadPresetBtn');
+    const deleteBtn = document.getElementById('deletePresetBtn');
+    const presetList = document.getElementById('presetList');
+    const presetNameInput = document.getElementById('presetName');
+
+    function loadPresets() {
+      presetList.innerHTML = '<option value="">-- Select Preset --</option>';
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('preset_')) {
+          const name = key.replace('preset_', '');
           const option = document.createElement('option');
-          option.value = ex;
-          option.textContent = ex;
-          exerciseSelect.appendChild(option);
-        });
-      }
-
-      // Calculate estimated 1RM using Epley formula
-      function calculate1RM() {
-        const weight = parseFloat(weightInput.value);
-        const reps = parseInt(repsInput.value);
-        if (!isNaN(weight) && !isNaN(reps) && reps > 0) {
-          const oneRM = Math.round(weight * (1 + reps / 30));
-          result.textContent = `Estimated 1RM: ${oneRM} lbs`;
-        } else {
-          result.textContent = "Please enter valid weight and reps.";
+          option.value = name;
+          option.textContent = name;
+          presetList.appendChild(option);
         }
+      });
+    }
+
+    saveBtn.onclick = () => {
+      const name = presetNameInput.value.trim();
+      if (!name) {
+        alert('Please enter a preset name.');
+        return;
       }
+      const preset = {
+        day: document.getElementById('day').value,
+        exercise: document.getElementById('exercise').value,
+        weight: document.getElementById('weight').value,
+        reps: document.getElementById('reps').value,
+        sets: document.getElementById('sets').value,
+        notes: document.getElementById('notes').value,
+      };
+      localStorage.setItem(`preset_${name}`, JSON.stringify(preset));
+      alert(`Preset "${name}" saved!`);
+      loadPresets();
+    };
 
-      // Initial fill
-      updateExercises();
+    loadBtn.onclick = () => {
+      const name = presetList.value;
+      if (!name) {
+        alert('Please select a preset to load.');
+        return;
+      }
+      const preset = JSON.parse(localStorage.getItem(`preset_${name}`));
+      if (!preset) {
+        alert('Preset not found.');
+        return;
+      }
+      document.getElementById('day').value = preset.day;
+      document.getElementById('exercise').value = preset.exercise;
+      document.getElementById('weight').value = preset.weight;
+      document.getElementById('reps').value = preset.reps;
+      document.getElementById('sets').value = preset.sets;
+      document.getElementById('notes').value = preset.notes;
+    };
 
-      // Event listeners
-      daySelect.addEventListener('change', updateExercises);
-      calculateBtn.addEventListener('click', calculate1RM);
-    });
+    deleteBtn.onclick = () => {
+      const name = presetList.value;
+      if (!name) {
+        alert('Please select a preset to delete.');
+        return;
+      }
+      if (confirm(`Delete preset "${name}"?`)) {
+        localStorage.removeItem(`preset_${name}`);
+        loadPresets();
+      }
+    };
+
+    // Load presets initially
+    loadPresets();
   </script>
 </body>
 </html>

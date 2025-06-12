@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Workout Progress</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      color: #333;
+      padding: 20px;
+      text-align: center;
+    }
+    h1 {
+      margin-bottom: 30px;
+    }
+    .chart-container {
+      max-width: 700px;
+      margin: 0 auto 40px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 20px;
+      height: 400px;
+      position: relative;
+    }
+    .max-weight-container {
+      max-width: 700px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 20px;
+      text-align: left;
+    }
+    .max-weight-container h2 {
+      margin-top: 0;
+      margin-bottom: 15px;
+    }
+    ul {
+      list-style: none;
+      padding-left: 0;
+      font-size: 16px;
+      margin: 0;
+    }
+    li {
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .no-data {
+      font-style: italic;
+      color: #777;
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Your Workout Progress</h1>
+
+  {% if dates and weights and dates|length > 0 and weights|length > 0 %}
+  <div class="chart-container">
+    <canvas id="progressChart"></canvas>
+  </div>
+  {% else %}
+  <p class="no-data">No progress data available to display chart.</p>
+  {% endif %}
+
+  <div class="max-weight-container">
+    <h2>Max Weight per Exercise</h2>
+    <ul>
+      {% if max_weight_data and max_weight_data|length > 0 %}
+        {% for exercise, weight in max_weight_data.items() %}
+          <li><strong>{{ exercise }}:</strong> {{ "%.2f"|format(weight) }} lbs</li>
+        {% endfor %}
+      {% else %}
+        <li class="no-data">No max weight data available.</li>
+      {% endif %}
+    </ul>
+  </div>
+
+  {% if dates and weights and dates|length > 0 and weights|length > 0 %}
+  <script>
+    const ctx = document.getElementById('progressChart').getContext('2d');
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: {{ dates | tojson | safe }},
+        datasets: [{
+          label: 'Max Weight Per Day (lbs)',
+          data: {{ weights | tojson | safe }},
+          fill: false,
+          borderColor: 'rgba(75, 192, 192, 1)',
+          backgroundColor: 'rgba(75, 192, 192, 0.2)',
+          tension: 0.25,
+          pointRadius: 6,
+          pointHoverRadius: 8,
+          borderWidth: 3,
+          hoverBorderWidth: 4,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: 'Date',
+              font: { size: 16, weight: 'bold' }
+            },
+            ticks: {
+              maxRotation: 45,
+              minRotation: 30
+            }
+          },
+          y: {
+            beginAtZero: false,
+            title: {
+              display: true,
+              text: 'Weight (lbs)',
+              font: { size: 16, weight: 'bold' }
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            display: true,
+            labels: {
+              font: { size: 14 }
+            }
+          },
+          tooltip: {
+            enabled: true,
+            mode: 'index',
+            intersect: false
+          }
+        },
+        interaction: {
+          mode: 'nearest',
+          intersect: false
+        }
+      }
+    });
+  </script>
+  {% endif %}
+
+</body>
+</html>
