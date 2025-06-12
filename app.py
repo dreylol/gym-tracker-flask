@@ -25,10 +25,10 @@ def log():
     weight = request.form.get("weight")
     reps = request.form.get("reps")
     sets = request.form.get("sets")
-    notes = request.form.get("notes")
+    notes = request.form.get("notes") or ""  # Optional, default empty string
     date = datetime.now().strftime("%Y-%m-%d")
 
-    # Basic validation to ensure no empty required values
+    # Basic validation to ensure required fields (except notes) are present
     if day and exercise and weight and reps and sets:
         try:
             weight_float = float(weight)
