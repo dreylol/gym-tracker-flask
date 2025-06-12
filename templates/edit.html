@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Edit Workout</title>
+  <style>
+    body {
+      background-color: #121212;
+      color: white;
+      font-family: Arial, sans-serif;
+      padding: 30px;
+    }
+    input, select, button, textarea {
+      background: #222;
+      color: white;
+      border: none;
+      padding: 10px;
+      margin: 5px 0;
+      width: 100%;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+    button {
+      background-color: #00bfff;
+      color: #000;
+      font-weight: bold;
+    }
+    a {
+      color: #00bfff;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Edit Workout Entry</h1>
+  <a href="/history">← Back to History</a>
+
+  <form method="POST">
+    <label for="day">Day:</label>
+    <select name="day" id="day" required>
+      {% for day_key in workout_days %}
+        <option value="{{ day_key }}" {% if day_key == entry[1] %}selected{% endif %}>{{ day_key }}</option>
+      {% endfor %}
+    </select>
+
+    <label for="exercise">Exercise:</label>
+    <select name="exercise" id="exercise" required>
+      <!-- Filled by JS based on selected day -->
+    </select>
+
+    <label for="weight">Weight (lbs):</label>
+    <input type="number" step="any" name="weight" id="weight" value="{{ entry[3] }}" required>
+
+    <label for="reps">Reps:</label>
+    <input type="number" name="reps" id="reps" value="{{ entry[4] }}" required>
+
+    <label for="sets">Sets:</label>
+    <input type="number" name="sets" id="sets" value="{{ entry[5] }}" required>
+
+    <label for="notes">Notes:</label>
+    <textarea name="notes" id="notes" rows="3">{{ entry[6] }}</textarea>
+
+    <button type="submit">Update Entry</button>
+  </form>
+
+  <!-- Workout data as JSON -->
+  <script id="exercise-data" type="application/json">
+    {{ workout_days | tojson }}
+  </script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const exerciseData = JSON.parse(document.getElementById("exercise-data").textContent);
+      const daySelect = document.getElementById("day");
+      const exerciseSelect = document.getElementById("exercise");
+      const selectedDay = "{{ entry[1] }}";
+      const currentExercise = "{{ entry[2] }}";
+
+      function updateExercises() {
+        const day = daySelect.value;
+        const exercises = exerciseData[day] || [];
+        exerciseSelect.innerHTML = '';
+        exercises.forEach(ex => {
+          const option = document.createElement('option');
+          option.value = ex;
+          option.textContent = ex;
+          if (ex === currentExercise) option.selected = true;
+          exerciseSelect.appendChild(option);
+        });
+      }
+
+      daySelect.addEventListener("change", updateExercises);
+      updateExercises();
+    });
+  </script>
+</body>
+</html>
